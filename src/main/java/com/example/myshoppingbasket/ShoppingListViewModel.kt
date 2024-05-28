@@ -1,5 +1,6 @@
 package com.example.shoppingmate
 
+import android.util.Log
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -10,6 +11,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import java.io.Console
 
 class ShoppingListViewModel : ViewModel() {
     private val _uiState = MutableStateFlow(ShoppingListState())
@@ -26,7 +28,7 @@ class ShoppingListViewModel : ViewModel() {
         }
         run breaking@{
             _uiState.value.shoppingItems.forEach {
-                if (it.item == itemName) {
+                if (it.itemName == itemName) {
                     _uiState.update { currentState ->
                         currentState.copy(
                             error = "Item already exists in the cart",
@@ -41,7 +43,7 @@ class ShoppingListViewModel : ViewModel() {
 
     fun addToList(item: String) {
         if (!_uiState.value.isExistingItem) {
-            var items: MutableList<ShoppingItem> = _uiState.value.shoppingItems
+            var items: MutableList<ShoppingItem> = _uiState.value.shoppingItems.toMutableList()
             items.add(ShoppingItem(item, true))
             _uiState.update { currentState ->
                 currentState.copy(
@@ -53,10 +55,10 @@ class ShoppingListViewModel : ViewModel() {
     }
 
     fun addToBasket(shoppingItem: ShoppingItem) {
-        var items: MutableList<ShoppingItem> = _uiState.value.shoppingItems
+        var items: MutableList<ShoppingItem> = _uiState.value.shoppingItems.toMutableList()
         run breaking@{
             items.forEach {
-                if (it.item == shoppingItem.item) {
+                if (it.itemName == shoppingItem.itemName) {
                     it.addedToBasket = true
                     return@breaking
                 }
@@ -70,10 +72,10 @@ class ShoppingListViewModel : ViewModel() {
     }
 
     fun removeFromBasket(shoppingItem: ShoppingItem) {
-        var items: MutableList<ShoppingItem> = _uiState.value.shoppingItems
+        var items: MutableList<ShoppingItem> = _uiState.value.shoppingItems.toMutableList()
         run breaking@{
             items.forEach {
-                if (it.item == shoppingItem.item) {
+                if (it.itemName == shoppingItem.itemName) {
                     it.addedToBasket = false
                     return@breaking
                 }
@@ -87,18 +89,11 @@ class ShoppingListViewModel : ViewModel() {
     }
 
     fun deleteShoppingItem(shoppingItem: ShoppingItem) {
-        var items: MutableList<ShoppingItem> = _uiState.value.shoppingItems
-        run breaking@{
-            items.forEach {
-                if (it.item == shoppingItem.item) {
-                    items.remove(it)
-                    return@breaking
-                }
-            }
-        }
+        var items: MutableList<ShoppingItem> = _uiState.value.shoppingItems.toMutableList()
+        items.remove(shoppingItem)
         _uiState.update { currentState ->
             currentState.copy(
-                shoppingItems = items
+                shoppingItems = items.toList()
             )
         }
     }
