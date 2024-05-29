@@ -17,6 +17,7 @@ class ShoppingListViewModel : ViewModel() {
     private val _uiState = MutableStateFlow(ShoppingListState())
     val shoppingListState: StateFlow<ShoppingListState> = _uiState.asStateFlow()
     var userEntry by mutableStateOf("")
+    var isAddedToBasket by mutableStateOf(false)
 
     fun itemExists(itemName: String) {
         userEntry = itemName
@@ -44,10 +45,10 @@ class ShoppingListViewModel : ViewModel() {
     fun addToList(item: String) {
         if (!_uiState.value.isExistingItem) {
             var items: MutableList<ShoppingItem> = _uiState.value.shoppingItems.toMutableList()
-            items.add(ShoppingItem(item, true))
+            items.add(ShoppingItem(item, false))
             _uiState.update { currentState ->
                 currentState.copy(
-                    shoppingItems = items
+                    shoppingItems = items.toList()
                 )
             }
             updateUserEntry("")
@@ -56,34 +57,22 @@ class ShoppingListViewModel : ViewModel() {
 
     fun addToBasket(shoppingItem: ShoppingItem) {
         var items: MutableList<ShoppingItem> = _uiState.value.shoppingItems.toMutableList()
-        run breaking@{
-            items.forEach {
-                if (it.itemName == shoppingItem.itemName) {
-                    it.addedToBasket = true
-                    return@breaking
-                }
-            }
-        }
+        items.remove(shoppingItem)
+        items.add(ShoppingItem(shoppingItem.itemName, true))
         _uiState.update { currentState ->
             currentState.copy(
-                shoppingItems = items
+                shoppingItems = items.toList()
             )
         }
     }
 
     fun removeFromBasket(shoppingItem: ShoppingItem) {
         var items: MutableList<ShoppingItem> = _uiState.value.shoppingItems.toMutableList()
-        run breaking@{
-            items.forEach {
-                if (it.itemName == shoppingItem.itemName) {
-                    it.addedToBasket = false
-                    return@breaking
-                }
-            }
-        }
+        items.remove(shoppingItem)
+        items.add(ShoppingItem(shoppingItem.itemName, false))
         _uiState.update { currentState ->
             currentState.copy(
-                shoppingItems = items
+                shoppingItems = items.toList()
             )
         }
     }

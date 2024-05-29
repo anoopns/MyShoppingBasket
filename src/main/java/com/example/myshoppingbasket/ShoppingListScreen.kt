@@ -34,7 +34,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 fun ShoppingListScreen(
     shoppingListViewModel: ShoppingListViewModel = viewModel()
 ) {
-    val shoppingListUiState by shoppingListViewModel.shoppingListState.collectAsState()
+    val uiState by shoppingListViewModel.shoppingListState.collectAsState()
 
     Card(
         modifier = Modifier
@@ -50,11 +50,13 @@ fun ShoppingListScreen(
         ) {
             AddToListLayout(
                 onTextChange = { shoppingListViewModel.itemExists(it) },
-                shoppingListUiState.isExistingItem,
+                uiState.isExistingItem,
                 onButtonClick = { shoppingListViewModel.addToList(it) },
                 shoppingListViewModel.userEntry,
-                shoppingListUiState.shoppingItems,
-                onDelete = { shoppingListViewModel.deleteShoppingItem(it) }
+                uiState.shoppingItems,
+                onDelete = { shoppingListViewModel.deleteShoppingItem(it) },
+                addToBasket = { shoppingListViewModel.addToBasket(it) },
+                removeFromBasket = { shoppingListViewModel.removeFromBasket(it) }
             )
         }
 
@@ -68,7 +70,9 @@ fun AddToListLayout(
     onButtonClick: (String) -> Unit,
     userEntry: String,
     shoppingItems: List<ShoppingItem>,
-    onDelete: (ShoppingItem) -> Unit
+    onDelete: (ShoppingItem) -> Unit,
+    addToBasket: (ShoppingItem) -> Unit,
+    removeFromBasket: (ShoppingItem) -> Unit
 ) {
     Column(
         verticalArrangement = Arrangement.spacedBy(16.dp),
@@ -104,17 +108,23 @@ fun AddToListLayout(
                 text = "Add to basket"
             )
         }
-        MyBasketLayout(shoppingItems, onDelete)
+        MyBasketLayout(shoppingItems, onDelete, addToBasket, removeFromBasket)
     }
 
 }
 
 
 @Composable
-fun MyBasketLayout(shoppingItems: List<ShoppingItem>, onDelete: (ShoppingItem) -> Unit) {
+fun MyBasketLayout(
+    shoppingItems: List<ShoppingItem>,
+    onDelete: (ShoppingItem) -> Unit,
+    addToBasket: (ShoppingItem) -> Unit,
+    removeFromBasket: (ShoppingItem) -> Unit,
+    modifier: Modifier = Modifier
+) {
         LazyColumn {
             itemsIndexed(shoppingItems) { index, item ->
-                val annotatedText = buildAnnotatedString {
+                val deleteItem = buildAnnotatedString {
                     withStyle(
                         style = SpanStyle(
                             color = Color.Blue,
@@ -124,14 +134,46 @@ fun MyBasketLayout(shoppingItems: List<ShoppingItem>, onDelete: (ShoppingItem) -
                         append("Delete")
                     }
                 }
+                var fontColor = Color.Blue
+                var textValue: String = "AddToBasket"
+                if(item.addedToBasket) {
+                    fontColor = Color.Green
+                    textValue = "RemoveFromBasket"
+                }
+
+                val addRemoveToBasket = buildAnnotatedString {
+                    withStyle(
+                        style = SpanStyle(
+                            color = fontColor,
+                            fontWeight = FontWeight.Bold
+                        )
+                    ) {
+                        append(textValue)
+                    }
+                }
+
                 Row(
                     Modifier
                         .fillMaxWidth()
                         .height(Dp(50f))
                 ) {
-                    Text(text = item.itemName, Modifier.weight(0.85f))
+                    Text(
+                        text = item.itemName,
+                        Modifier.weight(0.85f),
+                        )
                     ClickableText(
-                        text = annotatedText, onClick = {
+                        text = addRemoveToBasket, onClick = {
+                            if(textValue === "AddToBasket") {
+                                addToBasket(item)
+                            } else{
+                                removeFromBasket(item)
+                            }
+
+                        },
+                        modifier = Modifier.weight(0.15f)
+                    )
+                    ClickableText(
+                        text = deleteItem, onClick = {
                             onDelete(item)
                         },
                         modifier = Modifier.weight(0.15f)
